@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CIII CEM Unit Planner (Multi-Group)</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f7f9fa; }
+    h2 { margin-top: 2em; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 6px; }
+    th { background: #e0e0e0; }
+    input[type="number"] { width: 60px; }
+    .unit-group { margin-bottom: 1em; padding: 1em; background: #fff; border: 1px solid #ddd; }
+    .group-label { font-weight: bold; font-size: 1.1em; margin-bottom: 0.5em; display: block; }
+    #validationIndicator {
+      margin-top: 1em;
+      font-weight: bold;
+      padding: 0.5em;
+      border-radius: 5px;
+      display: inline-block;
+    }
+    #validationIndicator.valid {
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+    #validationIndicator.invalid {
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+    #validationIndicator.override {
+      color: #856404;
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+    }
+    .export-buttons {
+      margin-top: 1em;
+    }
+    .export-buttons button {
+      margin-right: 10px;
+    }
+    .other-unit-container {
+      margin-top: 15px;
+    }
+    .other-unit {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      position: relative;
+    }
+    .other-unit input[type="text"] {
+      width: 300px;
+      margin-left: 5px;
+    }
+    .remove-other-unit {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .add-other-unit {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-top: 5px;
+      margin-right: 5px;
+    }
+    .notes-section {
+      margin-top: 15px;
+    }
+    .notes-section textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .packaging-rules {
+      background: #e8f4fc; 
+      padding: 15px; 
+      margin-bottom: 20px; 
+      border-radius: 5px; 
+      border-left: 4px solid #2196F3;
+    }
+    .override-warning {
+      margin: 15px 0; 
+      padding: 10px; 
+      background: #fff8e1; 
+      border-left: 4px solid #ffc107;
+    }
+    .override-warning p {
+      font-size: 0.9em; 
+      margin: 5px 0 0 25px; 
+      color: #795548;
+    }
+    .quarter-selector {
+      margin-left: 10px;
+      display: none;
+    }
+    .quarter-selector select {
+      margin-left: 5px;
+    }
+    .schedule-mode-selector {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+    }
+    .quarter-section {
+      background-color: #f8f9fa;
+      border-left: 4px solid #6c757d;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .quarter-header {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .duration-input {
+      display: inline;
+    }
+    .quarter-total {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CIII Conservation & Ecosystem Management – Unit Planner</h1>
+
+  <div class="packaging-rules">
+    <h3 style="margin-top: 0;">Packaging Rules Summary</h3>
+    <ul style="margin-bottom: 0;">
+      <li><strong>Total Units:</strong> 16 units must be selected</li>
+      <li><strong>Core Units:</strong> All 2 core units are required</li>
+      <li><strong>Groups A-H:</strong> At least 6 units must be from Groups A-H</li>
+      <li><strong>Group I:</strong> Maximum 6 electives from Group I</li>
+      <li><strong>Imported Units:</strong> Maximum 4 imported electives</li>
+    </ul>
+  </div>
+
+  <div class="override-warning">
+    <label>
+      <input type="checkbox" id="overrideRules"> 
+      Override packaging rules (for special cases only)
+    </label>
+    <p>
+      Warning: Only use this if student has previously completed units elsewhere.
+      Qualification may not meet standards if rules aren't followed.
+    </p>
+  </div>
+
+  <form id="unitForm">
+    <h2>1. Select Units</h2>
+    
+    <div class="schedule-mode-selector">
+      <label>
+        <input type="radio" name="scheduleMode" value="weekly" checked> Weekly Schedule (units run sequentially)
+      </label>
+      <label style="margin-left: 20px;">
+        <input type="radio" name="scheduleMode" value="quarterly"> Quarterly Schedule (units grouped by quarter)
+      </label>
+    </div>
+    
+    <div class="unit-group" id="core-units"><span class="group-label">Core Units (Select all 2)</span></div>
+    <div class="unit-group" id="groupB"><span class="group-label">Group B – Ecological Restoration</span></div>
+    <div class="unit-group" id="groupC"><span class="group-label">Group C – Land, Parks & Wildlife</span></div>
+    <div class="unit-group" id="groupD"><span class="group-label">Group D – Conservation Earthworks</span></div>
+    <div class="unit-group" id="groupG"><span class="group-label">Group G – Fire</span></div>
+    <div class="unit-group" id="groupI"><span class="group-label">Group I – General Electives</span></div>
+    <div class="unit-group" id="imported"><span class="group-label">Imported Units</span></div>
+
+    <div id="validationIndicator" class="invalid">Please select units according to packaging rules.</div>
+
+    <h2>2. Student Details</h2>
+    <label>Student Name: <input type="text" id="studentName" required /></label><br /><br />
+    <label>Student ID: <input type="text" id="studentId" /></label><br /><br />
+    
+    <div class="notes-section">
+      <label>Notes/Manual Entries:</label>
+      <textarea id="notes" placeholder="Add any additional notes or manual entries here..."></textarea>
+    </div>
+
+    <h2>3. Schedule Options</h2>
+    <label>Course Start Date: <input type="date" id="startDate" required /></label><br /><br />
+    <button type="submit">Generate Schedule</button>
+  </form>
+
+  <div class="export-buttons">
+    <button onclick="exportToCSV()">Export to CSV</button>
+    <button onclick="exportToPDF()">Export to PDF</button>
+  </div>
+
+  <div id="results" style="margin-top:2em;"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    window.jsPDF = window.jspdf.jsPDF;
+
+    function exportToCSV() {
+      const table = document.querySelector("#results table");
+      const studentName = document.getElementById("studentName").value || "Unknown Student";
+      const notes = document.getElementById("notes").value;
+      if (!table) return alert("No schedule to export");
+      
+      let csv = `Student Name,${studentName}\n`;
+      csv += `Student ID,${document.getElementById("studentId").value || ''}\n`;
+      csv += `Generated,${new Date().toLocaleDateString()}\n`;
+      csv += `Notes,"${notes.replace(/"/g, '""')}"\n\n`;
+      
+      table.querySelectorAll("tr").forEach(row => {
+        const cells = Array.from(row.querySelectorAll("th,td")).map(cell => '"' + cell.textContent.trim().replace(/"/g, '""') + '"');
+        csv += cells.join(",") + "\n";
+      });
+
+      const filename = prompt("Enter a name for your CSV file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${filename}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportToPDF() {
+      const table = document.querySelector("#results table");
+      const studentName = document.getElementById("studentName").value || "Unknown Student";
+      const studentId = document.getElementById("studentId").value || "";
+      const notes = document.getElementById("notes").value;
+      if (!table) return alert("No schedule to export");
+
+      const filename = prompt("Enter a name for your PDF file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text(`CIII CEM Schedule - ${studentName}`, 14, 16);
+      doc.setFontSize(10);
+      doc.text(`Student ID: ${studentId}`, 14, 24);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);
+
+      let startY = 40;
+      
+      if (notes) {
+        doc.text("Notes:", 14, 40);
+        const splitNotes = doc.splitTextToSize(notes, 180);
+        doc.text(splitNotes, 14, 48);
+        startY = 48 + (splitNotes.length * 6);
+      }
+
+      const rows = [];
+      table.querySelectorAll("tr").forEach(row => {
+        const rowData = Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim());
+        rows.push(rowData);
+      });
+
+      doc.autoTable({ 
+        head: [rows[0]], 
+        body: rows.slice(1), 
+        startY: startY,
+        headStyles: {
+          fillColor: [64, 64, 64]
+        },
+        margin: { top: startY }
+      });
+      
+      doc.save(`${filename}.pdf`);
+    }
+
+    const coreUnits = [
+      { code: "AHCECR309", name: "Conduct an ecological and cultural site inspection prior to works", duration: 6 },
+      { code: "AHCWHS302", name: "Contribute to workplace health and safety processes", duration: 6 },
+    ];
+
+    const electiveUnits = [
+      { code: "AHCECR301", name: "Maintain native ecosystem areas", duration: 6, groups: ["groupB"] },
+      { code: "AHCECR305", name: "Collect native seed", duration: 6, groups: ["groupB"] },
+      { code: "AHCECR307", name: "Read and interpret maps", duration: 6, groups: ["groupB"] },
+      { code: "AHCPCM303", name: "Identify plant specimens", duration: 6, groups: ["groupB"] },
+      { code: "AHCPMG301", name: "Control weeds", duration: 6, groups: ["groupB"] },
+      { code: "AHCPMG302", name: "Control plant pests, diseases and disorders", duration: 6, groups: ["groupB"] },
+      { code: "AHCFAU302", name: "Identify fauna in the field", duration: 6, groups: ["groupC"] },
+      { code: "AHCLPW310", name: "Supervise park visitor activities", duration: 6, groups: ["groupC"] },
+      { code: "AHCWRK320", name: "Apply environmentally sustainable work practices", duration: 6, groups: ["groupC"] },
+      { code: "AHCBIO303", name: "Apply biosecurity measures", duration: 6, groups: ["groupD", "groupI"] },
+      { code: "AHCMOM302", name: "Perform machinery maintenance", duration: 6, groups: ["groupD"] },
+      { code: "AHCMOM304", name: "Operate machinery and equipment", duration: 6, groups: ["groupD"] },
+      { code: "AHCPCM204", name: "Recognise plants", duration: 6, groups: ["groupD"] },
+      { code: "FWPCOT3325", name: "Operate four wheel drive vehicle on unsealed roads", duration: 6, groups: ["groupG", "groupI"] },
+      { code: "AHCCHM304", name: "Transport and store chemicals", duration: 6, groups: ["groupI"] },
+      { code: "AHCCHM307", name: "Prepare and apply chemicals", duration: 6, groups: ["groupI"] },
+      { code: "AHCLPW313", name: "Undertake water sampling", duration: 6, groups: ["groupI"] },
+      { code: "AHCMOM213", name: "Operate and maintain chainsaws", duration: 6, groups: ["groupI"] },
+      { code: "CPPSSI3011", name: "Produce basic maps", duration: 6, groups: ["groupI"] },
+      { code: "FWPCOT3326", name: "Recover 4WD vehicle", duration: 6, groups: ["groupI"] },
+      { code: "HLTAID011", name: "Provide First Aid", duration: 6, groups: ["groupI"] },
+      { code: "AHCMOM202", name: "Operate tractors", duration: 6, groups: ["imported"] },
+      { code: "AHCMOM207", name: "Conduct front-end loader ops", duration: 6, groups: ["imported"] },
+      { code: "AHCMOM216", name: "Operate side by side utility vehicles", duration: 6, groups: ["imported"] },
+      { code: "AHCMOM217", name: "Operate quad bikes", duration: 6, groups: ["imported"] },
+      { code: "AHCNSY207", name: "Undertake propagation", duration: 6, groups: ["imported"] },
+      { code: "FWPCOT2266", name: "Operate brush cutter", duration: 6, groups: ["imported"] }
+    ];
+
+    function buildUnitCheckboxes() {
+      coreUnits.forEach(unit => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <label>
+            <input type="checkbox" value="${unit.code}" data-code="${unit.code}" data-name="${unit.name}" data-groups="core" checked disabled>
+            ${unit.code} – ${unit.name}
+            <span class="duration-input">
+              &nbsp; Duration (weeks): <input type="number" min="1" value="${unit.duration}" class="duration" data-unit="${unit.code}">
+            </span>
+            <span class="quarter-selector">
+              Quarter: <select class="quarter-select" data-unit="${unit.code}">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+              </select>
+            </span>
+          </label>`;
+        document.getElementById("core-units").appendChild(div);
+      });
+
+      electiveUnits.forEach(unit => {
+        unit.groups.forEach(group => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <label>
+              <input type="checkbox" data-code="${unit.code}" data-name="${unit.name}" data-groups="${unit.groups.join(',')}" value="${unit.code}">
+              ${unit.code} – ${unit.name} ${unit.groups.length > 1 ? `(Groups: ${unit.groups.map(g => g.replace("group", "").toUpperCase()).join(", ")})` : ""}
+              <span class="duration-input">
+                &nbsp; Duration (weeks): <input type="number" min="1" value="${unit.duration}" class="duration" data-unit="${unit.code}">
+              </span>
+              <span class="quarter-selector">
+                Quarter: <select class="quarter-select" data-unit="${unit.code}">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                </select>
+              </span>
+            </label>`;
+          document.getElementById(group).appendChild(div);
+        });
+      });
+
+      const importedDiv = document.getElementById("imported");
+      const otherContainer = document.createElement("div");
+      otherContainer.className = "other-unit-container";
+      otherContainer.innerHTML = `
+        <button class="add-other-unit" onclick="addOtherUnit('AtoH')">+ Add Other Unit (Groups A-H)</button>
+        <button class="add-other-unit" onclick="addOtherUnit('groupI')">+ Add Other Unit (Group I)</button>
+        <button class="add-other-unit" onclick="addOtherUnit('imported')">+ Add Other Imported Unit</button>
+        <div id="otherUnitsList"></div>
+      `;
+      importedDiv.appendChild(otherContainer);
+      
+      updateQuarterSelectorsVisibility();
+    }
+
+    function addOtherUnit(groupType) {
+      const otherUnitsList = document.getElementById("otherUnitsList");
+      const newId = Date.now();
+      
+      const groupLabel = {
+        'AtoH': 'Groups A-H',
+        'groupI': 'Group I',
+        'imported': 'Imported'
+      }[groupType] || 'Custom';
+      
+      const otherUnitDiv = document.createElement("div");
+      otherUnitDiv.className = "other-unit";
+      otherUnitDiv.innerHTML = `
+        <label>
+          <input type="checkbox" id="otherUnitCheckbox-${newId}" checked>
+          ${groupLabel} Unit:
+          <input type="text" id="otherUnitDetails-${newId}" placeholder="Unit code and name" required>
+          <span class="duration-input">
+            &nbsp; Duration (weeks): <input type="number" min="1" value="6" class="duration" id="otherUnitDuration-${newId}">
+          </span>
+          <span class="quarter-selector">
+            Quarter: <select class="quarter-select" id="otherUnitQuarter-${newId}">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
+          </span>
+        </label>
+        <input type="hidden" id="otherUnitGroup-${newId}" value="${groupType}">
+        <button class="remove-other-unit" onclick="removeOtherUnit(${newId})">×</button>
+      `;
+      otherUnitsList.appendChild(otherUnitDiv);
+      
+      updateValidationIndicator();
+      updateQuarterSelectorsVisibility();
+    }
+
+    function removeOtherUnit(id) {
+      const unitToRemove = document.querySelector(`#otherUnitCheckbox-${id}`).closest('.other-unit');
+      unitToRemove.remove();
+      updateValidationIndicator();
+    }
+
+    function getSelectedUnits() {
+      const selected = [];
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+
+      document.querySelectorAll("input[type=checkbox]:not([id^='otherUnitCheckbox-'])").forEach(cb => {
+        if (cb.checked) {
+          const code = cb.dataset.code;
+          const name = cb.dataset.name;
+          const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
+          const selectedGroup = cb.closest('.unit-group').id;
+          
+          let duration = 6;
+          if (scheduleMode === 'weekly') {
+            const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
+            duration = parseInt(durationInput?.value || 6);
+          }
+          
+          let quarter = null;
+          if (scheduleMode === 'quarterly') {
+            const quarterSelect = document.querySelector(`select.quarter-select[data-unit="${code}"]`);
+            quarter = quarterSelect ? parseInt(quarterSelect.value) : 1;
+          }
+          
+          selected.push({ code, name, allGroups, selectedGroup, duration, quarter });
+        }
+      });
+
+      document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
+        if (cb.checked) {
+          const id = cb.id.split("-")[1];
+          const details = document.getElementById(`otherUnitDetails-${id}`).value.trim();
+          if (details) {
+            let duration = 6;
+            if (scheduleMode === 'weekly') {
+              duration = parseInt(document.getElementById(`otherUnitDuration-${id}`).value || 6);
+            }
+            
+            const groupType = document.getElementById(`otherUnitGroup-${id}`).value;
+            
+            let quarter = null;
+            if (scheduleMode === 'quarterly') {
+              quarter = parseInt(document.getElementById(`otherUnitQuarter-${id}`).value);
+            }
+            
+            let selectedGroup = "imported";
+            if (groupType === "AtoH") selectedGroup = "groupB";
+            else if (groupType === "groupI") selectedGroup = "groupI";
+            
+            selected.push({
+              code: details.split(" ")[0] || "OTHER",
+              name: details,
+              allGroups: [groupType],
+              selectedGroup,
+              duration,
+              quarter,
+              isCustom: true
+            });
+          }
+        }
+      });
+
+      return selected;
+    }
+
+    function generateSchedule(units, startDate) {
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+      
+      if (scheduleMode === 'weekly') {
+        return generateWeeklySchedule(units, startDate);
+      } else {
+        return generateQuarterlySchedule(units, startDate);
+      }
+    }
+
+    function generateWeeklySchedule(units, startDate) {
+      const schedule = [];
+      let currentDate = new Date(startDate);
+      
+      for (const unit of units) {
+        const start = new Date(currentDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + (unit.duration * 7) - 1);
+        
+        schedule.push({
+          ...unit,
+          startDate: formatDate(start),
+          endDate: formatDate(end)
+        });
+        
+        currentDate = new Date(end);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      return schedule;
+    }
+
+    function generateQuarterlySchedule(units, startDate) {
+      const schedule = [];
+      const start = new Date(startDate);
+      
+      const quarters = {
+        1: [], 2: [], 3: [], 4: [], 
+        5: [], 6: [], 7: [], 8: []
+      };
+      
+      units.forEach(unit => {
+        const quarter = unit.quarter || 1;
+        quarters[quarter].push(unit);
+      });
+      
+      const quarterDates = {};
+      let currentQuarterStart = new Date(start);
+      
+      for (let q = 1; q <= 8; q++) {
+        const quarterEnd = new Date(currentQuarterStart);
+        quarterEnd.setDate(quarterEnd.getDate() + (12 * 7) - 1);
+        
+        quarterDates[q] = {
+          start: new Date(currentQuarterStart),
+          end: new Date(quarterEnd)
+        };
+        
+        currentQuarterStart = new Date(quarterEnd);
+        currentQuarterStart.setDate(currentQuarterStart.getDate() + 1);
+      }
+      
+      for (const [quarter, quarterUnits] of Object.entries(quarters)) {
+        if (quarterUnits.length === 0) continue;
+        
+        const qNum = parseInt(quarter);
+        const quarterStart = new Date(quarterDates[qNum].start);
+        
+        let currentDate = new Date(quarterStart);
+        
+        for (const unit of quarterUnits) {
+          const start = new Date(currentDate);
+          const end = new Date(start);
+          end.setDate(end.getDate() + (unit.duration * 7) - 1);
+          
+          schedule.push({
+            ...unit,
+            quarter: qNum,
+            startDate: formatDate(start),
+            endDate: formatDate(end)
+          });
+          
+          currentDate = new Date(end);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+      
+      return schedule;
+    }
+
+    function formatDate(d) {
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function validate(selected) {
+      const override = document.getElementById("overrideRules").checked;
+      const groupCounts = { core: 0, groupI: 0, imported: 0, AtoH: 0 };
+      const totalDuration = selected.reduce((sum, unit) => sum + unit.duration, 0);
+      
+      selected.forEach(u => {
+        if (u.selectedGroup === "core-units") groupCounts.core++;
+        if (u.selectedGroup === "groupI") groupCounts.groupI++;
+        if (u.selectedGroup === "imported") groupCounts.imported++;
+        if (["groupB", "groupC", "groupD", "groupG"].includes(u.selectedGroup)) groupCounts.AtoH++;
+      });
+
+      const errors = [];
+      
+      if (selected.length !== 16) {
+        errors.push("Exactly 16 units must be selected.");
+      }
+      
+      if (totalDuration > 96) {
+        errors.push(`Total duration (${totalDuration} weeks) exceeds 2-year program limit (96 weeks).`);
+      }
+      
+      if (!override) {
+        if (groupCounts.core !== 2) errors.push("You must include exactly 2 core units.");
+        if (groupCounts.AtoH < 6) errors.push("At least 6 units must be from Groups A-H.");
+        if (groupCounts.groupI > 6) errors.push("Max 6 electives from Group I.");
+        if (groupCounts.imported > 4) errors.push("Max 4 imported electives.");
+      }
+
+      return errors;
+    }
+
+    function renderSchedule(schedule, startDate) {
+      if (!schedule.length) {
+        document.getElementById("results").innerHTML = "<p>No schedule available.</p>";
+        return;
+      }
+
+      const studentName = document.getElementById("studentName").value || "Student";
+      const studentId = document.getElementById("studentId").value || "";
+      const notes = document.getElementById("notes").value;
+      const override = document.getElementById("overrideRules").checked;
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+      const [year, month, day] = startDate.split("-");
+      const start = new Date(year, month - 1, day);
+      const endParts = schedule.at(-1).endDate.split("/");
+      const end = new Date(endParts[2], endParts[1] - 1, endParts[0]);
+      const weeks = Math.round((end - start) / (1000 * 60 * 60 * 24 * 7));
+
+      let out = `
+        <h2>📅 Schedule for ${studentName}</h2>
+        ${studentId ? `<p><strong>Student ID:</strong> ${studentId}</p>` : ''}
+        ${override ? '<p style="color: #856404; background: #fff3cd; padding: 5px; border-radius: 4px;">⚠ PACKAGING RULES OVERRIDE ACTIVE</p>' : ''}
+        <p><strong>Schedule Mode:</strong> ${scheduleMode === 'quarterly' ? 'Quarterly' : 'Weekly'}</p>
+        <p><strong>Actual Duration:</strong> ${weeks} weeks (${formatDate(start)} to ${formatDate(end)})</p>
+      `;
+      
+      if (weeks > 96) out += `<p style="color:red">⚠ Course exceeds the 96-week (2 year) limit.</p>`;
+      
+      if (notes) {
+        out += `<div class="notes-output"><strong>Notes:</strong><p>${notes.replace(/\n/g, '<br>')}</p></div>`;
+      }
+
+      if (scheduleMode === 'quarterly') {
+        const quarters = {};
+        schedule.forEach(u => {
+          const quarter = u.quarter || 1;
+          if (!quarters[quarter]) quarters[quarter] = [];
+          quarters[quarter].push(u);
+        });
+        
+        for (let q = 1; q <= 8; q++) {
+          const quarterUnits = quarters[q] || [];
+          const quarterStart = quarterUnits[0]?.startDate || "N/A";
+          const quarterEnd = quarterUnits[quarterUnits.length - 1]?.endDate || "N/A";
+          const totalWeeks = quarterUnits.reduce((sum, u) => sum + u.duration, 0);
+          
+          out += `
+            <div class="quarter-section">
+              <div class="quarter-header">Quarter ${q} (${quarterStart} to ${quarterEnd})</div>
+              <div class="quarter-total">Total weeks: ${totalWeeks}</div>
+              <table>
+                <tr><th>Code</th><th>Name</th><th>Group</th><th>Start</th><th>End</th><th>Weeks</th></tr>
+          `;
+          
+          if (quarterUnits.length === 0) {
+            out += `<tr><td colspan="6">No units scheduled this quarter</td></tr>`;
+          } else {
+            quarterUnits.forEach(u => {
+              let group = '';
+              if (u.selectedGroup === "core-units") group = "Core";
+              else if (u.selectedGroup === "groupI") group = "I";
+              else if (["groupB", "groupC", "groupD", "groupG"].includes(u.selectedGroup)) {
+                group = u.selectedGroup.replace("group", "").toUpperCase();
+              } else if (u.selectedGroup === "imported") group = "Imported";
+              
+              if (u.isCustom) group += " (Custom)";
+              
+              out += `<tr>
+                <td>${u.code}</td>
+                <td>${u.name}</td>
+                <td>${group}</td>
+                <td>${u.startDate}</td>
+                <td>${u.endDate}</td>
+                <td>${u.duration}</td>
+              </tr>`;
+            });
+          }
+          
+          out += `</table></div>`;
+        }
+      } else {
+        out += `<table><tr><th>Code</th><th>Name</th><th>Group</th><th>Start</th><th>End</th><th>Weeks</th></tr>`;
+        schedule.forEach(u => {
+          let group = '';
+          if (u.selectedGroup === "core-units") group = "Core";
+          else if (u.selectedGroup === "groupI") group = "I";
+          else if (["groupB", "groupC", "groupD", "groupG"].includes(u.selectedGroup)) {
+            group = u.selectedGroup.replace("group", "").toUpperCase();
+          } else if (u.selectedGroup === "imported") group = "Imported";
+          
+          if (u.isCustom) group += " (Custom)";
+          
+          out += `<tr>
+            <td>${u.code}</td>
+            <td>${u.name}</td>
+            <td>${group}</td>
+            <td>${u.startDate}</td>
+            <td>${u.endDate}</td>
+            <td>${u.duration}</td>
+          </tr>`;
+        });
+        out += `</table>`;
+      }
+
+      document.getElementById("results").innerHTML = out;
+    }
+
+    function updateValidationIndicator() {
+      const selected = getSelectedUnits();
+      const errors = validate(selected);
+      const override = document.getElementById("overrideRules").checked;
+      const indicator = document.getElementById("validationIndicator");
+      
+      if (errors.length === 0) {
+        if (override) {
+          indicator.textContent = "⚠ Override active - packaging rules not enforced";
+          indicator.className = "override";
+        } else {
+          indicator.textContent = "✅ Selection meets qualification packaging rules.";
+          indicator.className = "valid";
+        }
+      } else {
+        indicator.textContent = "❌ " + errors.join(" ");
+        indicator.className = "invalid";
+      }
+    }
+
+    function updateQuarterSelectorsVisibility() {
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+      const quarterSelectors = document.querySelectorAll('.quarter-selector');
+      const durationInputs = document.querySelectorAll('.duration-input');
+      
+      if (scheduleMode === 'quarterly') {
+        quarterSelectors.forEach(el => el.style.display = 'inline');
+        durationInputs.forEach(el => el.style.display = 'none');
+      } else {
+        quarterSelectors.forEach(el => el.style.display = 'none');
+        durationInputs.forEach(el => el.style.display = 'inline');
+      }
+    }
+
+    document.getElementById("unitForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const studentName = document.getElementById("studentName").value;
+      if (!studentName) return alert("Please enter a student name");
+      
+      let otherUnitsValid = true;
+      document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
+        if (cb.checked) {
+          const id = cb.id.split("-")[1];
+          if (!document.getElementById(`otherUnitDetails-${id}`).value.trim()) {
+            otherUnitsValid = false;
+          }
+        }
+      });
+      
+      if (!otherUnitsValid) return alert("Please provide details for all 'Other' units");
+      
+      const selected = getSelectedUnits();
+      const errors = validate(selected);
+      if (errors.length) return alert(errors.join("\n"));
+      
+      const startDate = document.getElementById("startDate").value;
+      const schedule = generateSchedule(selected, startDate);
+      renderSchedule(schedule, startDate);
+    });
+
+    document.body.addEventListener("change", e => {
+      if (
+        e.target.matches("input[type=checkbox]") ||
+        e.target.matches("input.duration") ||
+        e.target.matches("[id^='otherUnitDetails-']") ||
+        e.target.matches("#overrideRules") ||
+        e.target.matches("input[name=scheduleMode]") ||
+        e.target.matches("select.quarter-select")
+      ) {
+        updateValidationIndicator();
+        
+        if (e.target.matches("input[name=scheduleMode]")) {
+          updateQuarterSelectorsVisibility();
+        }
+      }
+    });
+
+    buildUnitCheckboxes();
+    updateValidationIndicator();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CIII CEM Unit Planner (Multi-Group)</title>
+  <style>
+    /* [Previous CSS remains exactly the same] */
+  </style>
+</head>
+<body>
+  <!-- [Previous HTML remains exactly the same until the script section] -->
+
+  <script>
+    // [Previous code remains the same until generateQuarterlySchedule function]
+
+    function generateQuarterlySchedule(units, startDate) {
+      const schedule = [];
+      const start = new Date(startDate);
+      
+      // Group units by quarter
+      const quarters = {
+        1: [], 2: [], 3: [], 4: [], 
+        5: [], 6: [], 7: [], 8: []
+      };
+      
+      units.forEach(unit => {
+        const quarter = unit.quarter || 1;
+        quarters[quarter].push({
+          ...unit,
+          duration: 12 // Force 12 weeks for all units in quarterly mode
+        });
+      });
+      
+      // Calculate quarter dates (each quarter is exactly 12 weeks)
+      const quarterDates = {};
+      let currentQuarterStart = new Date(start);
+      
+      for (let q = 1; q <= 8; q++) {
+        const quarterEnd = new Date(currentQuarterStart);
+        quarterEnd.setDate(quarterEnd.getDate() + (12 * 7) - 1);
+        
+        quarterDates[q] = {
+          start: new Date(currentQuarterStart),
+          end: new Date(quarterEnd)
+        };
+        
+        currentQuarterStart = new Date(quarterEnd);
+        currentQuarterStart.setDate(currentQuarterStart.getDate() + 1);
+      }
+      
+      // For each quarter, assign the same dates to all units (concurrent)
+      for (const [quarter, quarterUnits] of Object.entries(quarters)) {
+        if (quarterUnits.length === 0) continue;
+        
+        const qNum = parseInt(quarter);
+        const quarterStart = new Date(quarterDates[qNum].start);
+        const quarterEnd = new Date(quarterDates[qNum].end);
+        
+        // All units in this quarter run concurrently with same dates
+        quarterUnits.forEach(unit => {
+          schedule.push({
+            ...unit,
+            quarter: qNum,
+            startDate: formatDate(quarterStart),
+            endDate: formatDate(quarterEnd),
+            duration: 12 // Ensure 12 weeks duration
+          });
+        });
+      }
+      
+      return schedule;
+    }
+
+    // [Rest of the code remains the same until getSelectedUnits function]
+
+    function getSelectedUnits() {
+      const selected = [];
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+
+      document.querySelectorAll("input[type=checkbox]:not([id^='otherUnitCheckbox-'])").forEach(cb => {
+        if (cb.checked) {
+          const code = cb.dataset.code;
+          const name = cb.dataset.name;
+          const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
+          const selectedGroup = cb.closest('.unit-group').id;
+          
+          let duration = scheduleMode === 'quarterly' ? 12 : 6; // Force 12 weeks in quarterly mode
+          if (scheduleMode === 'weekly') {
+            const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
+            duration = parseInt(durationInput?.value || 6);
+          }
+          
+          let quarter = null;
+          if (scheduleMode === 'quarterly') {
+            const quarterSelect = document.querySelector(`select.quarter-select[data-unit="${code}"]`);
+            quarter = quarterSelect ? parseInt(quarterSelect.value) : 1;
+          }
+          
+          selected.push({ code, name, allGroups, selectedGroup, duration, quarter });
+        }
+      });
+
+      document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
+        if (cb.checked) {
+          const id = cb.id.split("-")[1];
+          const details = document.getElementById(`otherUnitDetails-${id}`).value.trim();
+          if (details) {
+            let duration = 6;
+            const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+            if (scheduleMode === 'quarterly') {
+              duration = 12; // Force 12 weeks for custom units in quarterly mode
+            } else {
+              duration = parseInt(document.getElementById(`otherUnitDuration-${id}`).value || 6);
+            }
+            
+            const groupType = document.getElementById(`otherUnitGroup-${id}`).value;
+            
+            let quarter = null;
+            if (scheduleMode === 'quarterly') {
+              quarter = parseInt(document.getElementById(`otherUnitQuarter-${id}`).value);
+            }
+            
+            let selectedGroup = "imported";
+            if (groupType === "AtoH") selectedGroup = "groupB";
+            else if (groupType === "groupI") selectedGroup = "groupI";
+            
+            selected.push({
+              code: details.split(" ")[0] || "OTHER",
+              name: details,
+              allGroups: [groupType],
+              selectedGroup,
+              duration,
+              quarter,
+              isCustom: true
+            });
+          }
+        }
+      });
+
+      return selected;
+    }
+
+    // [Rest of the code remains exactly the same]
+  </script>
+</body>
+</html>
