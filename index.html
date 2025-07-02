@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,6 +208,20 @@
 
   <script>
     window.jsPDF = window.jspdf.jsPDF;
+
+    function formatDate(date) {
+      if (!(date instanceof Date)) {
+        // If it's already a formatted string, return it
+        if (typeof date === 'string' && date.includes('/')) return date;
+        // Otherwise try to parse it
+        date = new Date(date);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+      }
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
 
     function exportToCSV() {
       const table = document.querySelector("#results table");
@@ -440,7 +455,7 @@
           const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
           const selectedGroup = cb.closest('.unit-group').id;
           
-          let duration = scheduleMode === 'quarterly' ? 12 : 6; // Force 12 weeks in quarterly mode
+          let duration = scheduleMode === 'quarterly' ? 12 : 6;
           if (scheduleMode === 'weekly') {
             const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
             duration = parseInt(durationInput?.value || 6);
@@ -464,7 +479,7 @@
             let duration = 6;
             const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
             if (scheduleMode === 'quarterly') {
-              duration = 12; // Force 12 weeks for custom units in quarterly mode
+              duration = 12;
             } else {
               duration = parseInt(document.getElementById(`otherUnitDuration-${id}`).value || 6);
             }
@@ -528,58 +543,51 @@
       return schedule;
     }
 
-      function generateQuarterlySchedule(units, startDate) {
+    function generateQuarterlySchedule(units, startDate) {
       const schedule = [];
       const start = new Date(startDate);
       
       // Group units by quarter
-      const quarters = {
-        1: [], 2: [], 3: [], 4: [], 
-        5: [], 6: [], 7: [], 8: []
-      };
+      const quarters = {};
+      for (let q = 1; q <= 8; q++) quarters[q] = [];
       
       units.forEach(unit => {
         const quarter = unit.quarter || 1;
         quarters[quarter].push({
           ...unit,
-          duration: 12 // Fixed 12-week (3 month) duration for all units
+          duration: 12
         });
       });
       
-      // Calculate quarter dates (each quarter is exactly 12 weeks)
+      // Calculate quarter dates
       const quarterDates = {};
       let currentQuarterStart = new Date(start);
       
       for (let q = 1; q <= 8; q++) {
         const quarterEnd = new Date(currentQuarterStart);
-        quarterEnd.setDate(quarterEnd.getDate() + (12 * 7) - 1); // 12 weeks
+        quarterEnd.setDate(quarterEnd.getDate() + (12 * 7) - 1);
         
         quarterDates[q] = {
           start: new Date(currentQuarterStart),
           end: new Date(quarterEnd)
         };
         
-        // Set next quarter start date (day after this quarter ends)
+        // Set next quarter start date
         currentQuarterStart = new Date(quarterEnd);
         currentQuarterStart.setDate(currentQuarterStart.getDate() + 1);
       }
       
-      // Assign all units in each quarter to run simultaneously
+      // Assign units to quarters
       for (const [quarter, quarterUnits] of Object.entries(quarters)) {
-        if (quarterUnits.length === 0) continue;
-        
         const qNum = parseInt(quarter);
-        const quarterStart = quarterDates[qNum].start;
-        const quarterEnd = quarterDates[qNum].end;
+        const quarterRange = quarterDates[qNum];
         
-        // All units in this quarter run concurrently with same dates
         quarterUnits.forEach(unit => {
           schedule.push({
             ...unit,
             quarter: qNum,
-            startDate: formatDate(quarterStart),
-            endDate: formatDate(quarterEnd),
-            duration: 12 // Ensure 12 weeks duration
+            startDate: formatDate(quarterRange.start),
+            endDate: formatDate(quarterRange.end)
           });
         });
       }
@@ -590,9 +598,6 @@
     function validate(selected) {
       const override = document.getElementById("overrideRules").checked;
       const groupCounts = { core: 0, groupI: 0, imported: 0, AtoH: 0 };
-      
-      // In quarterly mode, total duration is fixed at 96 weeks (8 quarters × 12 weeks)
-      const totalDuration = 96;
       
       selected.forEach(u => {
         if (u.selectedGroup === "core-units") groupCounts.core++;
@@ -630,7 +635,7 @@
       const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
       const [year, month, day] = startDate.split("-");
       const start = new Date(year, month - 1, day);
-      const endParts = schedule.at(-1).endDate.split("/");
+      const endParts = schedule[schedule.length - 1].endDate.split("/");
       const end = new Date(endParts[2], endParts[1] - 1, endParts[0]);
       const weeks = Math.round((end - start) / (1000 * 60 * 60 * 24 * 7));
 
@@ -762,6 +767,9 @@
       const studentName = document.getElementById("studentName").value;
       if (!studentName) return alert("Please enter a student name");
       
+      const startDate = document.getElementById("startDate").value;
+      if (!startDate) return alert("Please select a start date");
+      
       let otherUnitsValid = true;
       document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
         if (cb.checked) {
@@ -778,8 +786,12 @@
       const errors = validate(selected);
       if (errors.length) return alert(errors.join("\n"));
       
-      const startDate = document.getElementById("startDate").value;
-      const schedule = generateSchedule(selected, startDate);
+      // Parse the start date properly
+      const [year, month, day] = startDate.split('-');
+      const parsedStartDate = new Date(year, month - 1, day);
+      
+      // Generate and render schedule
+      const schedule = generateSchedule(selected, parsedStartDate);
       renderSchedule(schedule, startDate);
     });
 
@@ -805,40 +817,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-document.getElementById("unitForm").addEventListener("submit", e => {
-  e.preventDefault();
-  const studentName = document.getElementById("studentName").value;
-  if (!studentName) return alert("Please enter a student name");
-  
-  const startDate = document.getElementById("startDate").value;
-  if (!startDate) return alert("Please select a start date"); // Add this validation
-  
-  let otherUnitsValid = true;
-  document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
-    if (cb.checked) {
-      const id = cb.id.split("-")[1];
-      if (!document.getElementById(`otherUnitDetails-${id}`).value.trim()) {
-        otherUnitsValid = false;
-      }
-    }
-  });
-  
-  if (!otherUnitsValid) return alert("Please provide details for all 'Other' units");
-  
-  const selected = getSelectedUnits();
-  const errors = validate(selected);
-  if (errors.length) return alert(errors.join("\n"));
-  
-  const schedule = generateSchedule(selected, startDate);
-  renderSchedule(schedule, startDate);
-});
-
