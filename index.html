@@ -965,3 +965,121 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CIII CEM Unit Planner (Multi-Group)</title>
+  <style>
+    /* [Previous CSS remains exactly the same] */
+  </style>
+</head>
+<body>
+  <!-- [Previous HTML remains exactly the same until the script section] -->
+
+  <script>
+    // [Previous code remains the same until generateQuarterlySchedule function]
+
+    function generateQuarterlySchedule(units, startDate) {
+      const schedule = [];
+      const start = new Date(startDate);
+      
+      // Group units by quarter
+      const quarters = {
+        1: [], 2: [], 3: [], 4: [], 
+        5: [], 6: [], 7: [], 8: []
+      };
+      
+      units.forEach(unit => {
+        const quarter = unit.quarter || 1;
+        quarters[quarter].push({
+          ...unit,
+          duration: 12 // Fixed 12-week (3 month) duration for all units
+        });
+      });
+      
+      // Calculate quarter dates (each quarter is exactly 12 weeks)
+      const quarterDates = {};
+      let currentQuarterStart = new Date(start);
+      
+      for (let q = 1; q <= 8; q++) {
+        const quarterEnd = new Date(currentQuarterStart);
+        quarterEnd.setDate(quarterEnd.getDate() + (12 * 7) - 1); // 12 weeks
+        
+        quarterDates[q] = {
+          start: new Date(currentQuarterStart),
+          end: new Date(quarterEnd)
+        };
+        
+        // Set next quarter start date (day after this quarter ends)
+        currentQuarterStart = new Date(quarterEnd);
+        currentQuarterStart.setDate(currentQuarterStart.getDate() + 1);
+      }
+      
+      // Assign all units in each quarter to run simultaneously
+      for (const [quarter, quarterUnits] of Object.entries(quarters)) {
+        if (quarterUnits.length === 0) continue;
+        
+        const qNum = parseInt(quarter);
+        const quarterStart = quarterDates[qNum].start;
+        const quarterEnd = quarterDates[qNum].end;
+        
+        // All units in this quarter run concurrently with same dates
+        quarterUnits.forEach(unit => {
+          schedule.push({
+            ...unit,
+            quarter: qNum,
+            startDate: formatDate(quarterStart),
+            endDate: formatDate(quarterEnd),
+            duration: 12 // Ensure 12 weeks duration
+          });
+        });
+      }
+      
+      return schedule;
+    }
+
+    function validate(selected) {
+      const override = document.getElementById("overrideRules").checked;
+      const groupCounts = { core: 0, groupI: 0, imported: 0, AtoH: 0 };
+      
+      // In quarterly mode, total duration is fixed at 96 weeks (8 quarters × 12 weeks)
+      const totalDuration = 96;
+      
+      selected.forEach(u => {
+        if (u.selectedGroup === "core-units") groupCounts.core++;
+        if (u.selectedGroup === "groupI") groupCounts.groupI++;
+        if (u.selectedGroup === "imported") groupCounts.imported++;
+        if (["groupB", "groupC", "groupD", "groupG"].includes(u.selectedGroup)) groupCounts.AtoH++;
+      });
+
+      const errors = [];
+      
+      if (selected.length !== 16) {
+        errors.push("Exactly 16 units must be selected.");
+      }
+      
+      if (!override) {
+        if (groupCounts.core !== 2) errors.push("You must include exactly 2 core units.");
+        if (groupCounts.AtoH < 6) errors.push("At least 6 units must be from Groups A-H.");
+        if (groupCounts.groupI > 6) errors.push("Max 6 electives from Group I.");
+        if (groupCounts.imported > 4) errors.push("Max 4 imported electives.");
+      }
+
+      return errors;
+    }
+
+    // [Rest of the code remains exactly the same]
+  </script>
+</body>
+</html>
