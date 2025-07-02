@@ -806,3 +806,39 @@
 </body>
 </html>
 
+
+
+
+
+
+
+
+
+document.getElementById("unitForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const studentName = document.getElementById("studentName").value;
+  if (!studentName) return alert("Please enter a student name");
+  
+  const startDate = document.getElementById("startDate").value;
+  if (!startDate) return alert("Please select a start date"); // Add this validation
+  
+  let otherUnitsValid = true;
+  document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
+    if (cb.checked) {
+      const id = cb.id.split("-")[1];
+      if (!document.getElementById(`otherUnitDetails-${id}`).value.trim()) {
+        otherUnitsValid = false;
+      }
+    }
+  });
+  
+  if (!otherUnitsValid) return alert("Please provide details for all 'Other' units");
+  
+  const selected = getSelectedUnits();
+  const errors = validate(selected);
+  if (errors.length) return alert(errors.join("\n"));
+  
+  const schedule = generateSchedule(selected, startDate);
+  renderSchedule(schedule, startDate);
+});
+
