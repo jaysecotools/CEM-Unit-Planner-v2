@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -817,3 +816,47 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+function getSelectedUnits() {
+  const selected = [];
+  const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+
+  document.querySelectorAll("input[type=checkbox]:not([id^='otherUnitCheckbox-'])").forEach(cb => {
+    if (cb.checked) {
+      const code = cb.dataset.code;
+      const name = cb.dataset.name;
+      const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
+      const selectedGroup = cb.closest('.unit-group').id;
+      
+      let duration = scheduleMode === 'quarterly' ? 12 : 6;
+      if (scheduleMode === 'weekly') {
+        const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
+        duration = parseInt(durationInput?.value || 6);
+      }
+      
+      let quarter = null;
+      if (scheduleMode === 'quarterly') {
+        // FIX: Changed to find the quarter select for this specific checkbox
+        const quarterSelect = cb.parentElement.querySelector('select.quarter-select');
+        quarter = quarterSelect ? parseInt(quarterSelect.value) : 1;
+      }
+      
+      // Check if this unit is already in the selected array (from another group)
+      const existingIndex = selected.findIndex(u => u.code === code);
+      if (existingIndex >= 0) {
+        // Update the existing entry with the new group info
+        selected[existingIndex].allGroups = [...new Set([...selected[existingIndex].allGroups, ...allGroups])];
+        selected[existingIndex].selectedGroup = selectedGroup;
+      } else {
+        selected.push({ code, name, allGroups, selectedGroup, duration, quarter });
+      }
+    }
+  });
+
+  // ... rest of the function remains the same ...
+}
