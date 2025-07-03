@@ -254,61 +254,81 @@
   document.body.removeChild(a);
 }
 
-function exportToPDF() {
-  const tables = document.querySelectorAll("#results table");
-  const studentName = document.getElementById("studentName").value || "Unknown Student";
-  const studentId = document.getElementById("studentId").value || "";
-  const notes = document.getElementById("notes").value;
-  if (!tables.length) return alert("No schedule to export");
-
-  const filename = prompt("Enter a name for your PDF file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
-  const doc = new jsPDF();
+function exportToPDF() {  
+  const tables = document.querySelectorAll("#results table");  
+  const studentName = document.getElementById("studentName").value || "Unknown Student";  
+  const studentId = document.getElementById("studentId").value || "";  
+  const notes = document.getElementById("notes").value;  
+  if (!tables.length) return alert("No schedule to export");  
   
-  doc.setFontSize(16);
-  doc.text(`CIII CEM Schedule - ${studentName}`, 14, 16);
-  doc.setFontSize(10);
-  doc.text(`Student ID: ${studentId}`, 14, 24);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);
-
-  let startY = 40;
-  
-  if (notes) {
-    doc.text("Notes:", 14, 40);
-    const splitNotes = doc.splitTextToSize(notes, 180);
-    doc.text(splitNotes, 14, 48);
-    startY = 48 + (splitNotes.length * 6);
-  }
-
-  // Handle both weekly (single table) and quarterly (multiple tables) modes
-  let currentY = startY;
-  tables.forEach((table, index) => {
-    const rows = [];
-    table.querySelectorAll("tr").forEach(row => {
-      const rowData = Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim());
-      rows.push(rowData);
-    });
-
-    if (index > 0) {
-      // Add space between quarterly tables
-      currentY += 10;
-      doc.addPage();
-      currentY = 20;
-    }
-
-    doc.autoTable({ 
-      head: [rows[0]], 
-      body: rows.slice(1), 
-      startY: currentY,
-      headStyles: {
-        fillColor: [64, 64, 64]
-      },
-      margin: { top: currentY }
-    });
+  const filename = prompt("Enter a name for your PDF file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";  
+  const doc = new jsPDF();  
     
-    currentY = doc.lastAutoTable.finalY + 10;
-  });
+  // Set document properties  
+  doc.setProperties({  
+    title: `CIII CEM Schedule - ${studentName}`,  
+    subject: 'Training Schedule',  
+    author: 'CIII CEM Unit Planner',  
+    creator: 'CIII CEM Unit Planner'  
+  });  
   
-  doc.save(`${filename}.pdf`);
+  doc.setFontSize(16);  
+  doc.text(`CIII CEM Schedule - ${studentName}`, 14, 16);  
+  doc.setFontSize(10);  
+  doc.text(`Student ID: ${studentId}`, 14, 24);  
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);  
+  
+  let startY = 40;  
+    
+  // Add notes if they exist  
+  if (notes) {  
+    doc.text("Notes:", 14, 40);  
+    const splitNotes = doc.splitTextToSize(notes, 180);  
+    doc.text(splitNotes, 14, 48);  
+    startY = 48 + (splitNotes.length * 6);  
+  }  
+  
+  // Process all tables  
+  let currentY = startY;  
+  let isFirstTable = true;  
+    
+  tables.forEach((table, index) => {  
+    const rows = [];  
+    table.querySelectorAll("tr").forEach(row => {  
+      const rowData = Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim());  
+      rows.push(rowData);  
+    });  
+  
+    // Check if we need a new page before adding this table  
+    const tableHeight = (rows.length + 1) * 10; // Approximate height calculation  
+    if (currentY + tableHeight > doc.internal.pageSize.height - 20 && !isFirstTable) {  
+      doc.addPage();  
+      currentY = 20;  
+    }  
+  
+    doc.autoTable({   
+      head: [rows[0]],   
+      body: rows.slice(1),   
+      startY: currentY,  
+      headStyles: {  
+        fillColor: [64, 64, 64]  
+      },  
+      margin: { top: currentY },  
+      styles: {  
+        fontSize: 8, // Smaller font to fit more content  
+        cellPadding: 3, // Less padding to save space  
+        overflow: 'linebreak' // Ensure text wraps  
+      },  
+      columnStyles: {  
+        1: { cellWidth: 'auto' } // Let the name column auto-size  
+      }  
+    });  
+      
+    currentY = doc.lastAutoTable.finalY + 10;  
+    isFirstTable = false;  
+  });  
+    
+  doc.save(`${filename}.pdf`);  
 }
 
     const coreUnits = [
