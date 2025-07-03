@@ -2,205 +2,683 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CIII CEM Unit Planner (Multi-Group)</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f7f9fa; }
-    h2 { margin-top: 2em; }
-    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 6px; }
-    th { background: #e0e0e0; }
-    input[type="number"] { width: 60px; }
-    .unit-group { margin-bottom: 1em; padding: 1em; background: #fff; border: 1px solid #ddd; }
-    .group-label { font-weight: bold; font-size: 1.1em; margin-bottom: 0.5em; display: block; }
-    #validationIndicator {
-      margin-top: 1em;
-      font-weight: bold;
+    :root {
+      --primary-color: #2c7d4d;
+      --primary-light: #e8f5e9;
+      --secondary-color: #1565c0;
+      --accent-color: #ff9800;
+      --error-color: #d32f2f;
+      --success-color: #388e3c;
+      --warning-color: #ffa000;
+      --text-color: #333;
+      --light-gray: #f5f5f5;
+      --medium-gray: #e0e0e0;
+      --dark-gray: #757575;
+      --white: #ffffff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --border-radius: 6px;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background: var(--light-gray);
+      padding: 0;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: var(--primary-color);
+      margin-top: 0;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-color);
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 2em;
+      margin-bottom: 1em;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--medium-gray);
+    }
+    
+    h3 {
+      font-size: 1.2rem;
+    }
+    
+    table, th, td {
+      border: 1px solid var(--medium-gray);
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    
+    th {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 500;
+    }
+    
+    tr:nth-child(even) {
+      background-color: var(--primary-light);
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      padding: 8px 12px;
+      border: 1px solid var(--medium-gray);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(44, 125, 77, 0.2);
+    }
+    
+    input[type="number"] {
+      width: 70px;
+    }
+    
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    .unit-group {
+      margin-bottom: 1.5em;
+      padding: 1.5em;
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+    
+    .group-label {
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 1em;
+      display: block;
+      color: var(--secondary-color);
+    }
+    
+    .unit-item {
+      margin-bottom: 0.8em;
       padding: 0.5em;
-      border-radius: 5px;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    
+    .unit-item:hover {
+      background: var(--primary-light);
+      border-left-color: var(--primary-color);
+    }
+    
+    #validationIndicator {
+      margin-top: 1.5em;
+      font-weight: 600;
+      padding: 1em;
+      border-radius: var(--border-radius);
       display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
     }
+    
     #validationIndicator.valid {
-      color: #155724;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
+      color: var(--success-color);
+      background-color: rgba(56, 142, 60, 0.1);
+      border: 1px solid rgba(56, 142, 60, 0.3);
     }
+    
     #validationIndicator.invalid {
-      color: #721c24;
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
+      color: var(--error-color);
+      background-color: rgba(211, 47, 47, 0.1);
+      border: 1px solid rgba(211, 47, 47, 0.3);
     }
+    
     #validationIndicator.override {
-      color: #856404;
-      background-color: #fff3cd;
-      border: 1px solid #ffeeba;
+      color: var(--warning-color);
+      background-color: rgba(255, 160, 0, 0.1);
+      border: 1px solid rgba(255, 160, 0, 0.3);
     }
+    
     .export-buttons {
-      margin-top: 1em;
+      margin-top: 1.5em;
+      display: flex;
+      gap: 10px;
     }
-    .export-buttons button {
-      margin-right: 10px;
+    
+    button {
+      padding: 10px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
+    
+    button:hover {
+      background-color: #236641;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button.secondary {
+      background-color: var(--secondary-color);
+    }
+    
+    button.secondary:hover {
+      background-color: #0d47a1;
+    }
+    
     .other-unit-container {
       margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed var(--medium-gray);
     }
+    
     .other-unit {
-      margin-bottom: 10px;
-      padding: 10px;
-      background: #f0f0f0;
-      border-radius: 4px;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: var(--light-gray);
+      border-radius: var(--border-radius);
       position: relative;
     }
+    
     .other-unit input[type="text"] {
-      width: 300px;
+      width: 100%;
+      max-width: 400px;
       margin-left: 5px;
     }
+    
     .remove-other-unit {
       position: absolute;
       right: 10px;
       top: 10px;
-      background: #ff6b6b;
+      background: var(--error-color);
       color: white;
       border: none;
-      border-radius: 3px;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      padding: 0;
     }
+    
+    .remove-other-unit:hover {
+      background: #b71c1c;
+    }
+    
     .add-other-unit {
-      background: #4CAF50;
+      background: var(--primary-color);
       color: white;
       border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
+      padding: 8px 12px;
+      border-radius: var(--border-radius);
       cursor: pointer;
       margin-top: 5px;
-      margin-right: 5px;
+      margin-right: 8px;
+      font-size: 0.9rem;
     }
+    
+    .add-other-unit:hover {
+      background: #236641;
+    }
+    
     .notes-section {
-      margin-top: 15px;
+      margin-top: 20px;
     }
+    
     .notes-section textarea {
       width: 100%;
-      min-height: 80px;
-      padding: 8px;
+      min-height: 100px;
+      padding: 12px;
       box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      border: 1px solid var(--medium-gray);
+      border-radius: var(--border-radius);
+      font-family: inherit;
     }
-    .packaging-rules {
-      background: #e8f4fc; 
-      padding: 15px; 
-      margin-bottom: 20px; 
-      border-radius: 5px; 
-      border-left: 4px solid #2196F3;
+    
+    .info-box {
+      background: var(--white);
+      padding: 20px; 
+      margin-bottom: 30px; 
+      border-radius: var(--border-radius); 
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--primary-color);
     }
-    .override-warning {
-      margin: 15px 0; 
-      padding: 10px; 
-      background: #fff8e1; 
-      border-left: 4px solid #ffc107;
+    
+    .info-box h3 {
+      margin-top: 0;
+      color: var(--primary-color);
     }
-    .override-warning p {
+    
+    .info-box ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    
+    .info-box li {
+      margin-bottom: 8px;
+    }
+    
+    .warning-box {
+      background: #fff8e1;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: var(--border-radius);
+      border-left: 4px solid var(--warning-color);
+    }
+    
+    .warning-box p {
       font-size: 0.9em; 
-      margin: 5px 0 0 25px; 
-      color: #795548;
+      margin: 8px 0 0;
+      color: #5d4037;
     }
+    
     .quarter-selector {
-      margin-left: 10px;
+      margin-left: 15px;
       display: none;
     }
+    
     .quarter-selector select {
       margin-left: 5px;
+      padding: 5px;
     }
+    
     .schedule-mode-selector {
-      margin: 15px 0;
-      padding: 10px;
-      background: #f0f0f0;
-      border-radius: 4px;
+      margin: 20px 0;
+      padding: 15px;
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
     }
+    
+    .schedule-mode-selector label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .schedule-mode-selector input[type="radio"] {
+      margin-right: 8px;
+    }
+    
     .quarter-section {
-      background-color: #f8f9fa;
-      border-left: 4px solid #6c757d;
-      padding: 10px;
-      margin: 10px 0;
+      background-color: var(--white);
+      border-left: 4px solid var(--secondary-color);
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
     }
+    
     .quarter-header {
-      font-weight: bold;
-      margin-bottom: 5px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--secondary-color);
     }
+    
     .duration-input {
       display: inline;
+      margin-left: 10px;
     }
+    
     .quarter-total {
-      font-weight: bold;
-      margin-top: 5px;
+      font-weight: 600;
+      margin-top: 10px;
+      color: var(--secondary-color);
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .unit-group {
+        padding: 15px;
+      }
+      
+      .schedule-mode-selector {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Custom checkbox styling */
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: var(--white);
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      width: 1.15em;
+      height: 1.15em;
+      border: 0.15em solid var(--medium-gray);
+      border-radius: 0.15em;
+      transform: translateY(-0.075em);
+      display: inline-grid;
+      place-content: center;
+    }
+    
+    input[type="checkbox"]::before {
+      content: "";
+      width: 0.65em;
+      height: 0.65em;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em var(--primary-color);
+      transform-origin: bottom left;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    
+    input[type="checkbox"]:checked::before {
+      transform: scale(1);
+    }
+    
+    input[type="checkbox"]:disabled {
+      border-color: var(--dark-gray);
+      background-color: var(--medium-gray);
+    }
+    
+    input[type="checkbox"]:disabled::before {
+      box-shadow: inset 1em 1em var(--dark-gray);
+    }
+    
+    /* Custom radio button styling */
+    input[type="radio"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: var(--white);
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      width: 1.15em;
+      height: 1.15em;
+      border: 0.15em solid var(--medium-gray);
+      border-radius: 50%;
+      transform: translateY(-0.075em);
+      display: inline-grid;
+      place-content: center;
+    }
+    
+    input[type="radio"]::before {
+      content: "";
+      width: 0.65em;
+      height: 0.65em;
+      border-radius: 50%;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      background-color: var(--primary-color);
+    }
+    
+    input[type="radio"]:checked::before {
+      transform: scale(1);
+    }
+    
+    /* Results styling */
+    .results-container {
+      margin-top: 30px;
+      background: var(--white);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+    
+    .schedule-summary {
+      background: var(--light-gray);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 20px;
+    }
+    
+    .notes-output {
+      background: var(--light-gray);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin: 15px 0;
+    }
+    
+    .notes-output p {
+      margin: 8px 0 0;
+    }
+    
+    /* Tooltip for unit codes */
+    [data-tooltip] {
+      position: relative;
+    }
+    
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-color);
+      color: white;
+      padding: 5px 10px;
+      border-radius: var(--border-radius);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    
+    /* Badge for unit groups */
+    .unit-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--medium-gray);
+      border-radius: 10px;
+      font-size: 0.8rem;
+      margin-left: 5px;
+      color: var(--text-color);
+    }
+    
+    /* Status indicators */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+    
+    .status-indicator::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .status-valid::before {
+      background: var(--success-color);
+    }
+    
+    .status-invalid::before {
+      background: var(--error-color);
+    }
+    
+    .status-warning::before {
+      background: var(--warning-color);
     }
   </style>
 </head>
 <body>
-  <h1>CIII Conservation & Ecosystem Management – Unit Planner</h1>
+  <div class="container">
+    <h1>CIII Conservation & Ecosystem Management – Unit Planner</h1>
 
-  <div class="packaging-rules">
-    <h3 style="margin-top: 0;">Packaging Rules Summary</h3>
-    <ul style="margin-bottom: 0;">
-      <li><strong>Total Units:</strong> 16 units must be selected</li>
-      <li><strong>Core Units:</strong> All 2 core units are required</li>
-      <li><strong>Groups A-H:</strong> At least 6 units must be from Groups A-H</li>
-      <li><strong>Group I:</strong> Maximum 6 electives from Group I</li>
-      <li><strong>Imported Units:</strong> Maximum 4 imported electives</li>
-    </ul>
-  </div>
+    <div class="info-box">
+      <h3>Packaging Rules Summary</h3>
+      <ul>
+        <li><strong>Total Units:</strong> 16 units must be selected</li>
+        <li><strong>Core Units:</strong> All 2 core units are required</li>
+        <li><strong>Groups A-H:</strong> At least 6 units must be from Groups A-H</li>
+        <li><strong>Group I:</strong> Maximum 6 electives from Group I</li>
+        <li><strong>Imported Units:</strong> Maximum 4 imported electives</li>
+      </ul>
+    </div>
 
-  <div class="override-warning">
-    <label>
-      <input type="checkbox" id="overrideRules"> 
-      Override packaging rules (for special cases only)
-    </label>
-    <p>
-      Warning: Only use this if student has previously completed units elsewhere.
-      Qualification may not meet standards if rules aren't followed.
-    </p>
-  </div>
-
-  <form id="unitForm">
-    <h2>1. Select Units</h2>
-    
-    <div class="schedule-mode-selector">
+    <div class="warning-box">
       <label>
-        <input type="radio" name="scheduleMode" value="weekly" checked> Weekly Schedule (units run sequentially)
+        <input type="checkbox" id="overrideRules"> 
+        <span class="status-indicator status-warning">Override packaging rules (for special cases only)</span>
       </label>
-      <label style="margin-left: 20px;">
-        <input type="radio" name="scheduleMode" value="quarterly"> Quarterly Schedule (units grouped by quarter)
-      </label>
-    </div>
-    
-    <div class="unit-group" id="core-units"><span class="group-label">Core Units (Select all 2)</span></div>
-    <div class="unit-group" id="groupB"><span class="group-label">Group B – Ecological Restoration</span></div>
-    <div class="unit-group" id="groupC"><span class="group-label">Group C – Land, Parks & Wildlife</span></div>
-    <div class="unit-group" id="groupD"><span class="group-label">Group D – Conservation Earthworks</span></div>
-    <div class="unit-group" id="groupG"><span class="group-label">Group G – Fire</span></div>
-    <div class="unit-group" id="groupI"><span class="group-label">Group I – General Electives</span></div>
-    <div class="unit-group" id="imported"><span class="group-label">Imported Units</span></div>
-
-    <div id="validationIndicator" class="invalid">Please select units according to packaging rules.</div>
-
-    <h2>2. Student Details</h2>
-    <label>Student Name: <input type="text" id="studentName" required /></label><br /><br />
-    <label>Student ID: <input type="text" id="studentId" /></label><br /><br />
-    
-    <div class="notes-section">
-      <label>Notes/Manual Entries:</label>
-      <textarea id="notes" placeholder="Add any additional notes or manual entries here..."></textarea>
+      <p>
+        Warning: Only use this if student has previously completed units elsewhere.
+        Qualification may not meet standards if rules aren't followed.
+      </p>
     </div>
 
-    <h2>3. Schedule Options</h2>
-    <label>Course Start Date: <input type="date" id="startDate" required /></label><br /><br />
-    <button type="submit">Generate Schedule</button>
-  </form>
+    <form id="unitForm">
+      <h2>1. Select Units</h2>
+      
+      <div class="schedule-mode-selector">
+        <label>
+          <input type="radio" name="scheduleMode" value="weekly" checked> 
+          <span>Weekly Schedule (units run sequentially)</span>
+        </label>
+        <label>
+          <input type="radio" name="scheduleMode" value="quarterly"> 
+          <span>Quarterly Schedule (units grouped by quarter)</span>
+        </label>
+      </div>
+      
+      <div class="unit-group" id="core-units">
+        <span class="group-label">Core Units (Select all 2)</span>
+      </div>
+      <div class="unit-group" id="groupB">
+        <span class="group-label">Group B – Ecological Restoration</span>
+      </div>
+      <div class="unit-group" id="groupC">
+        <span class="group-label">Group C – Land, Parks & Wildlife</span>
+      </div>
+      <div class="unit-group" id="groupD">
+        <span class="group-label">Group D – Conservation Earthworks</span>
+      </div>
+      <div class="unit-group" id="groupG">
+        <span class="group-label">Group G – Fire</span>
+      </div>
+      <div class="unit-group" id="groupI">
+        <span class="group-label">Group I – General Electives</span>
+      </div>
+      <div class="unit-group" id="imported">
+        <span class="group-label">Imported Units</span>
+      </div>
 
-  <div class="export-buttons">
-    <button onclick="exportToCSV()">Export to CSV</button>
-    <button onclick="exportToPDF()">Export to PDF</button>
+      <div id="validationIndicator" class="invalid">Please select units according to packaging rules.</div>
+
+      <h2>2. Student Details</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="studentName">Student Name</label>
+          <input type="text" id="studentName" required />
+        </div>
+        <div class="form-group">
+          <label for="studentId">Student ID</label>
+          <input type="text" id="studentId" />
+        </div>
+        <div class="form-group">
+          <label for="startDate">Course Start Date</label>
+          <input type="date" id="startDate" required />
+        </div>
+      </div>
+      
+      <div class="notes-section">
+        <label for="notes">Notes/Manual Entries</label>
+        <textarea id="notes" placeholder="Add any additional notes or manual entries here..."></textarea>
+      </div>
+
+      <button type="submit">Generate Schedule</button>
+    </form>
+
+    <div class="export-buttons">
+      <button onclick="exportToCSV()" class="secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export to CSV
+      </button>
+      <button onclick="exportToPDF()" class="secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export to PDF
+      </button>
+    </div>
+
+    <div id="results" class="results-container"></div>
   </div>
-
-  <div id="results" style="margin-top:2em;"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -223,113 +701,118 @@
     }
 
     function exportToCSV() {
-  const tables = document.querySelectorAll("#results table");
-  const studentName = document.getElementById("studentName").value || "Unknown Student";
-  const notes = document.getElementById("notes").value;
-  if (!tables.length) return alert("No schedule to export");
-  
-  let csv = `Student Name,${studentName}\n`;
-  csv += `Student ID,${document.getElementById("studentId").value || ''}\n`;
-  csv += `Generated,${new Date().toLocaleDateString()}\n`;
-  csv += `Notes,"${notes.replace(/"/g, '""')}"\n\n`;
-  
-  // Handle both weekly (single table) and quarterly (multiple tables) modes
-  tables.forEach(table => {
-    table.querySelectorAll("tr").forEach(row => {
-      const cells = Array.from(row.querySelectorAll("th,td")).map(cell => '"' + cell.textContent.trim().replace(/"/g, '""') + '"');
-      csv += cells.join(",") + "\n";
-    });
-    // Add a separator between quarterly tables
-    if (tables.length > 1) csv += "\n";
-  });
-
-  const filename = prompt("Enter a name for your CSV file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filename}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function exportToPDF() {  
-  const tables = document.querySelectorAll("#results table");  
-  const studentName = document.getElementById("studentName").value || "Unknown Student";  
-  const studentId = document.getElementById("studentId").value || "";  
-  const notes = document.getElementById("notes").value;  
-  if (!tables.length) return alert("No schedule to export");  
-  
-  const filename = prompt("Enter a name for your PDF file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";  
-  const doc = new jsPDF();  
-    
-  // Set document properties  
-  doc.setProperties({  
-    title: `CIII CEM Schedule - ${studentName}`,  
-    subject: 'Training Schedule',  
-    author: 'CIII CEM Unit Planner',  
-    creator: 'CIII CEM Unit Planner'  
-  });  
-  
-  doc.setFontSize(16);  
-  doc.text(`CIII CEM Schedule - ${studentName}`, 14, 16);  
-  doc.setFontSize(10);  
-  doc.text(`Student ID: ${studentId}`, 14, 24);  
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);  
-  
-  let startY = 40;  
-    
-  // Add notes if they exist  
-  if (notes) {  
-    doc.text("Notes:", 14, 40);  
-    const splitNotes = doc.splitTextToSize(notes, 180);  
-    doc.text(splitNotes, 14, 48);  
-    startY = 48 + (splitNotes.length * 6);  
-  }  
-  
-  // Process all tables  
-  let currentY = startY;  
-  let isFirstTable = true;  
-    
-  tables.forEach((table, index) => {  
-    const rows = [];  
-    table.querySelectorAll("tr").forEach(row => {  
-      const rowData = Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim());  
-      rows.push(rowData);  
-    });  
-  
-    // Check if we need a new page before adding this table  
-    const tableHeight = (rows.length + 1) * 10; // Approximate height calculation  
-    if (currentY + tableHeight > doc.internal.pageSize.height - 20 && !isFirstTable) {  
-      doc.addPage();  
-      currentY = 20;  
-    }  
-  
-    doc.autoTable({   
-      head: [rows[0]],   
-      body: rows.slice(1),   
-      startY: currentY,  
-      headStyles: {  
-        fillColor: [64, 64, 64]  
-      },  
-      margin: { top: currentY },  
-      styles: {  
-        fontSize: 8, // Smaller font to fit more content  
-        cellPadding: 3, // Less padding to save space  
-        overflow: 'linebreak' // Ensure text wraps  
-      },  
-      columnStyles: {  
-        1: { cellWidth: 'auto' } // Let the name column auto-size  
-      }  
-    });  
+      const tables = document.querySelectorAll("#results table");
+      const studentName = document.getElementById("studentName").value || "Unknown Student";
+      const notes = document.getElementById("notes").value;
+      if (!tables.length) return alert("No schedule to export");
       
-    currentY = doc.lastAutoTable.finalY + 10;  
-    isFirstTable = false;  
-  });  
-    
-  doc.save(`${filename}.pdf`);  
-}
+      let csv = `Student Name,${studentName}\n`;
+      csv += `Student ID,${document.getElementById("studentId").value || ''}\n`;
+      csv += `Generated,${new Date().toLocaleDateString()}\n`;
+      csv += `Notes,"${notes.replace(/"/g, '""')}"\n\n`;
+      
+      // Handle both weekly (single table) and quarterly (multiple tables) modes
+      tables.forEach(table => {
+        table.querySelectorAll("tr").forEach(row => {
+          const cells = Array.from(row.querySelectorAll("th,td")).map(cell => '"' + cell.textContent.trim().replace(/"/g, '""') + '"');
+          csv += cells.join(",") + "\n";
+        });
+        // Add a separator between quarterly tables
+        if (tables.length > 1) csv += "\n";
+      });
+
+      const filename = prompt("Enter a name for your CSV file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${filename}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportToPDF() {  
+      const tables = document.querySelectorAll("#results table");  
+      const studentName = document.getElementById("studentName").value || "Unknown Student";  
+      const studentId = document.getElementById("studentId").value || "";  
+      const notes = document.getElementById("notes").value;  
+      if (!tables.length) return alert("No schedule to export");  
+      
+      const filename = prompt("Enter a name for your PDF file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";  
+      const doc = new jsPDF();  
+        
+      // Set document properties  
+      doc.setProperties({  
+        title: `CIII CEM Schedule - ${studentName}`,  
+        subject: 'Training Schedule',  
+        author: 'CIII CEM Unit Planner',  
+        creator: 'CIII CEM Unit Planner'  
+      });  
+      
+      // Add logo or header
+      doc.setFontSize(16);  
+      doc.setTextColor(44, 125, 77); // Primary color
+      doc.text(`CIII CEM Schedule - ${studentName}`, 14, 16);  
+      doc.setFontSize(10);  
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text(`Student ID: ${studentId}`, 14, 24);  
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);  
+      
+      let startY = 40;  
+        
+      // Add notes if they exist  
+      if (notes) {  
+        doc.text("Notes:", 14, 40);  
+        const splitNotes = doc.splitTextToSize(notes, 180);  
+        doc.text(splitNotes, 14, 48);  
+        startY = 48 + (splitNotes.length * 6);  
+      }  
+      
+      // Process all tables  
+      let currentY = startY;  
+      let isFirstTable = true;  
+        
+      tables.forEach((table, index) => {  
+        const rows = [];  
+        table.querySelectorAll("tr").forEach(row => {  
+          const rowData = Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim());  
+          rows.push(rowData);  
+        });  
+      
+        // Check if we need a new page before adding this table  
+        const tableHeight = (rows.length + 1) * 10; // Approximate height calculation  
+        if (currentY + tableHeight > doc.internal.pageSize.height - 20 && !isFirstTable) {  
+          doc.addPage();  
+          currentY = 20;  
+        }  
+      
+        doc.autoTable({   
+          head: [rows[0]],   
+          body: rows.slice(1),   
+          startY: currentY,  
+          headStyles: {  
+            fillColor: [44, 125, 77], // Primary color
+            textColor: 255,
+            fontStyle: 'bold'
+          },  
+          margin: { top: currentY },  
+          styles: {  
+            fontSize: 8, // Smaller font to fit more content  
+            cellPadding: 3, // Less padding to save space  
+            overflow: 'linebreak' // Ensure text wraps  
+          },  
+          columnStyles: {  
+            1: { cellWidth: 'auto' } // Let the name column auto-size  
+          }  
+        });  
+          
+        currentY = doc.lastAutoTable.finalY + 10;  
+        isFirstTable = false;  
+      });  
+        
+      doc.save(`${filename}.pdf`);  
+    }
 
     const coreUnits = [
       { code: "AHCECR309", name: "Conduct an ecological and cultural site inspection prior to works", duration: 6 },
@@ -369,10 +852,11 @@ function exportToPDF() {
     function buildUnitCheckboxes() {
       coreUnits.forEach(unit => {
         const div = document.createElement("div");
+        div.className = "unit-item";
         div.innerHTML = `
           <label>
             <input type="checkbox" value="${unit.code}" data-code="${unit.code}" data-name="${unit.name}" data-groups="core" checked disabled>
-            ${unit.code} – ${unit.name}
+            <strong>${unit.code}</strong> – ${unit.name}
             <span class="duration-input">
               &nbsp; Duration (weeks): <input type="number" min="1" value="${unit.duration}" class="duration" data-unit="${unit.code}">
             </span>
@@ -395,10 +879,17 @@ function exportToPDF() {
       electiveUnits.forEach(unit => {
         unit.groups.forEach(group => {
           const div = document.createElement("div");
+          div.className = "unit-item";
+          
+          // Create badge for units in multiple groups
+          const badge = unit.groups.length > 1 
+            ? `<span class="unit-badge">Groups: ${unit.groups.map(g => g.replace("group", "").toUpperCase()).join(", ")}</span>`
+            : "";
+            
           div.innerHTML = `
             <label>
               <input type="checkbox" data-code="${unit.code}" data-name="${unit.name}" data-groups="${unit.groups.join(',')}" value="${unit.code}">
-              ${unit.code} – ${unit.name} ${unit.groups.length > 1 ? `(Groups: ${unit.groups.map(g => g.replace("group", "").toUpperCase()).join(", ")})` : ""}
+              <strong>${unit.code}</strong> – ${unit.name} ${badge}
               <span class="duration-input">
                 &nbsp; Duration (weeks): <input type="number" min="1" value="${unit.duration}" class="duration" data-unit="${unit.code}">
               </span>
@@ -481,41 +972,40 @@ function exportToPDF() {
       updateValidationIndicator();
     }
 
-function getSelectedUnits() {
-  const selected = [];
-  const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
+    function getSelectedUnits() {
+      const selected = [];
+      const scheduleMode = document.querySelector('input[name="scheduleMode"]:checked').value;
 
-  document.querySelectorAll("input[type=checkbox]:not([id^='otherUnitCheckbox-'])").forEach(cb => {
-    if (cb.checked) {
-      const code = cb.dataset.code;
-      const name = cb.dataset.name;
-      const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
-      const selectedGroup = cb.closest('.unit-group').id;
-      
-      let duration = scheduleMode === 'quarterly' ? 12 : 6;
-      if (scheduleMode === 'weekly') {
-        const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
-        duration = parseInt(durationInput?.value || 6);
-      }
-      
-      let quarter = null;
-      if (scheduleMode === 'quarterly') {
-        // FIX: Changed to find the quarter select for this specific checkbox
-        const quarterSelect = cb.parentElement.querySelector('select.quarter-select');
-        quarter = quarterSelect ? parseInt(quarterSelect.value) : 1;
-      }
-      
-      // Check if this unit is already in the selected array (from another group)
-      const existingIndex = selected.findIndex(u => u.code === code);
-      if (existingIndex >= 0) {
-        // Update the existing entry with the new group info
-        selected[existingIndex].allGroups = [...new Set([...selected[existingIndex].allGroups, ...allGroups])];
-        selected[existingIndex].selectedGroup = selectedGroup;
-      } else {
-        selected.push({ code, name, allGroups, selectedGroup, duration, quarter });
-      }
-    }
-  });
+      document.querySelectorAll("input[type=checkbox]:not([id^='otherUnitCheckbox-'])").forEach(cb => {
+        if (cb.checked) {
+          const code = cb.dataset.code;
+          const name = cb.dataset.name;
+          const allGroups = cb.dataset.groups ? cb.dataset.groups.split(",") : ["core"];
+          const selectedGroup = cb.closest('.unit-group').id;
+          
+          let duration = scheduleMode === 'quarterly' ? 12 : 6;
+          if (scheduleMode === 'weekly') {
+            const durationInput = document.querySelector(`input.duration[data-unit="${code}"]`);
+            duration = parseInt(durationInput?.value || 6);
+          }
+          
+          let quarter = null;
+          if (scheduleMode === 'quarterly') {
+            const quarterSelect = cb.parentElement.querySelector('select.quarter-select');
+            quarter = quarterSelect ? parseInt(quarterSelect.value) : 1;
+          }
+          
+          // Check if this unit is already in the selected array (from another group)
+          const existingIndex = selected.findIndex(u => u.code === code);
+          if (existingIndex >= 0) {
+            // Update the existing entry with the new group info
+            selected[existingIndex].allGroups = [...new Set([...selected[existingIndex].allGroups, ...allGroups])];
+            selected[existingIndex].selectedGroup = selectedGroup;
+          } else {
+            selected.push({ code, name, allGroups, selectedGroup, duration, quarter });
+          }
+        }
+      });
 
       document.querySelectorAll("[id^='otherUnitCheckbox-']").forEach(cb => {
         if (cb.checked) {
@@ -686,14 +1176,15 @@ function getSelectedUnits() {
       const weeks = Math.round((end - start) / (1000 * 60 * 60 * 24 * 7));
 
       let out = `
-        <h2>📅 Schedule for ${studentName}</h2>
-        ${studentId ? `<p><strong>Student ID:</strong> ${studentId}</p>` : ''}
-        ${override ? '<p style="color: #856404; background: #fff3cd; padding: 5px; border-radius: 4px;">⚠ PACKAGING RULES OVERRIDE ACTIVE</p>' : ''}
-        <p><strong>Schedule Mode:</strong> ${scheduleMode === 'quarterly' ? 'Quarterly' : 'Weekly'}</p>
-        <p><strong>Actual Duration:</strong> ${weeks} weeks (${formatDate(start)} to ${formatDate(end)})</p>
+        <div class="schedule-summary">
+          <h2>📅 Schedule for ${studentName}</h2>
+          ${studentId ? `<p><strong>Student ID:</strong> ${studentId}</p>` : ''}
+          ${override ? '<div class="warning-box"><p>⚠ PACKAGING RULES OVERRIDE ACTIVE</p></div>' : ''}
+          <p><strong>Schedule Mode:</strong> ${scheduleMode === 'quarterly' ? 'Quarterly' : 'Weekly'}</p>
+          <p><strong>Actual Duration:</strong> ${weeks} weeks (${formatDate(start)} to ${formatDate(end)})</p>
+          ${weeks > 96 ? '<p class="status-indicator status-warning">⚠ Course exceeds the 96-week (2 year) limit.</p>' : ''}
+        </div>
       `;
-      
-      if (weeks > 96) out += `<p style="color:red">⚠ Course exceeds the 96-week (2 year) limit.</p>`;
       
       if (notes) {
         out += `<div class="notes-output"><strong>Notes:</strong><p>${notes.replace(/\n/g, '<br>')}</p></div>`;
