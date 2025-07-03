@@ -835,8 +835,46 @@ function getSelectedUnits() {
 
 
 
+function exportToCSV() {
+  const resultsDiv = document.getElementById("results");
+  if (!resultsDiv) return alert("No schedule to export");
+  
+  const tables = resultsDiv.querySelectorAll("table");
+  const studentName = document.getElementById("studentName").value || "Unknown Student";
+  const notes = document.getElementById("notes").value;
+  if (!tables.length) return alert("No schedule to export");
+  
+  let csv = `Student Name,${studentName}\n`;
+  csv += `Student ID,${document.getElementById("studentId").value || ''}\n`;
+  csv += `Generated,${new Date().toLocaleDateString()}\n`;
+  csv += `Notes,"${notes.replace(/"/g, '""')}"\n\n`;
+  
+  // Handle both weekly (single table) and quarterly (multiple tables) modes
+  tables.forEach(table => {
+    table.querySelectorAll("tr").forEach(row => {
+      const cells = Array.from(row.querySelectorAll("th,td")).map(cell => '"' + cell.textContent.trim().replace(/"/g, '""') + '"');
+      csv += cells.join(",") + "\n";
+    });
+    // Add a separator between quarterly tables
+    if (tables.length > 1) csv += "\n";
+  });
+
+  const filename = prompt("Enter a name for your CSV file:", `schedule_${studentName.replace(/[^a-z0-9]/gi, '_')}`) || "schedule";
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function exportToPDF() {
-  const tables = document.querySelectorAll("#results table");
+  const resultsDiv = document.getElementById("results");
+  if (!resultsDiv) return alert("No schedule to export");
+  
+  const tables = resultsDiv.querySelectorAll("table");
   const studentName = document.getElementById("studentName").value || "Unknown Student";
   const studentId = document.getElementById("studentId").value || "";
   const notes = document.getElementById("notes").value;
@@ -877,7 +915,7 @@ function exportToPDF() {
     // Calculate approximate table height (15px per row)
     const tableHeight = rows.length * 15;
     
-    // Check if we need a new page (currentY + tableHeight + margin > pageHeight - 20)
+    // Check if we need a new page
     if (currentY + tableHeight + margin > pageHeight - 20) {
       doc.addPage();
       currentY = 20; // Reset Y position after page break
